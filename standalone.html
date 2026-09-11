@@ -1,0 +1,1681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ComboBite — What goes with what? Normal or Cursed? 💀</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍌</text></svg>" />
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- React & Babel -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#fff7ed',
+              500: '#f97316',
+              600: '#ea580c',
+            }
+          },
+          animation: {
+            'bounce-short': 'bounce 0.6s ease-in-out 1',
+            'pulse-subtle': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #020617;
+      color: #f8fafc;
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    .scrollbar-none::-webkit-scrollbar { display: none; }
+    .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .animate-fadeIn { animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased selection:bg-orange-500 selection:text-slate-950">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, createContext, useContext } = React;
+
+    // --- ICON COMPONENTS ---
+    const Icon = ({ path, size = 18, className = "", fill = "none" }) => (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill={fill}
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+      >
+        {path}
+      </svg>
+    );
+
+    const Icons = {
+      Search: (p) => <Icon {...p} path={<><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></>} />,
+      Compass: (p) => <Icon {...p} path={<><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></>} />,
+      Swords: (p) => <Icon {...p} path={<><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" y1="19" x2="19" y2="13"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="19" y1="21" x2="21" y2="19"/><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"/><line x1="5" y1="14" x2="9" y2="18"/><line x1="7" y1="17" x2="4" y2="20"/><line x1="3" y1="19" x2="5" y2="21"/></>} />,
+      Flame: (p) => <Icon {...p} path={<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>} />,
+      PlusCircle: (p) => <Icon {...p} path={<><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></>} />,
+      Heart: (p) => <Icon {...p} path={<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>} />,
+      Star: (p) => <Icon {...p} path={<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>} />,
+      Skull: (p) => <Icon {...p} path={<><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M8 20v2h8v-2"/><path d="m12.5 17-.5-1-.5 1h1z"/><path d="M16 20a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20"/></>} />,
+      MessageCircle: (p) => <Icon {...p} path={<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>} />,
+      Share2: (p) => <Icon {...p} path={<><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></>} />,
+      ThumbsUp: (p) => <Icon {...p} path={<><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h3"/><path d="M7 10 11.15 3.32a2 2 0 0 1 3.42 1.62Z"/></>} />,
+      X: (p) => <Icon {...p} path={<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>} />,
+      Sparkles: (p) => <Icon {...p} path={<path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>} />,
+      Award: (p) => <Icon {...p} path={<><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></>} />,
+      Clock: (p) => <Icon {...p} path={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>} />,
+      ArrowRight: (p) => <Icon {...p} path={<><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></>} />,
+      CheckCircle2: (p) => <Icon {...p} path={<><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></>} />,
+      RotateCcw: (p) => <Icon {...p} path={<><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></>} />,
+      Send: (p) => <Icon {...p} path={<><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></>} />,
+      Upload: (p) => <Icon {...p} path={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></>} />,
+      Lock: (p) => <Icon {...p} path={<><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>} />,
+      Users: (p) => <Icon {...p} path={<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>} />,
+      RefreshCw: (p) => <Icon {...p} path={<><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></>} />,
+      Menu: (p) => <Icon {...p} path={<><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="18" x2="20" y2="18"/></>} />,
+      ArrowUpDown: (p) => <Icon {...p} path={<><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></>} />
+    };
+
+    // --- SEED DATA ---
+    const INITIAL_COMBINATIONS = [
+      {
+        id: "puttu-kadala",
+        title: "Puttu + Kadala Curry",
+        mainFoodId: "puttu",
+        mainFoodName: "Puttu",
+        comboFoodName: "Kadala Curry",
+        category: "Breakfast",
+        imageUrl: "https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?auto=format&fit=crop&w=1000&q=80",
+        description: "The undisputed emperor of Kerala breakfasts. Earthy black chickpeas roasted in coconut and mustard seeds poured over hot steamed puttu.",
+        whyLike: "Nothing on earth compares to crushing the steaming cylinder with roasted coconut chickpea gravy at 8:00 AM on Sunday.",
+        weirdnessScore: 1,
+        ratingAvg: 4.85,
+        ratingCount: 482,
+        reactions: { amazing: 390, good: 75, okay: 12, weird: 3, cursed: 2 },
+        votesNormal: 472,
+        votesCursed: 10,
+        isKeralaSpecial: true,
+        featured: true,
+        trending: true,
+        createdBy: "Rahul K.",
+        createdAt: "2026-02-15T08:30:00Z"
+      },
+      {
+        id: "puttu-banana",
+        title: "Puttu + Banana 🍌",
+        mainFoodId: "puttu",
+        mainFoodName: "Puttu",
+        comboFoodName: "Robusta Banana + Sugar",
+        category: "Breakfast",
+        imageUrl: "https://images.unsplash.com/photo-1528825871115-3581a5387919?auto=format&fit=crop&w=1000&q=80",
+        description: "Every Malayali kid's first love. Ripe sweet banana mashed with your fingers directly into hot coconut puttu with crunchy sugar and melted ghee.",
+        whyLike: "Pure nostalgia. Takes 20 seconds to make, zero cooking required for the side, pure bliss.",
+        weirdnessScore: 1,
+        ratingAvg: 4.72,
+        ratingCount: 520,
+        reactions: { amazing: 410, good: 88, okay: 15, weird: 5, cursed: 2 },
+        votesNormal: 512,
+        votesCursed: 8,
+        isKeralaSpecial: true,
+        featured: true,
+        trending: true,
+        createdBy: "Anjali Menon",
+        createdAt: "2026-02-18T09:15:00Z"
+      },
+      {
+        id: "puttu-beef",
+        title: "Puttu + Beef Roast 🥩",
+        mainFoodId: "puttu",
+        mainFoodName: "Puttu",
+        comboFoodName: "Kerala Beef Roast",
+        category: "Meat",
+        imageUrl: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1000&q=80",
+        description: "When breakfast meets slow-cooked culinary violence. Spicy, black pepper-coated tender beef roast with crunchy fried coconut shards soaked into crumbly puttu.",
+        whyLike: "Heavy, unapologetic, and guarantees a 3-hour afternoon coma. 10/10 perfection.",
+        weirdnessScore: 1,
+        ratingAvg: 4.92,
+        ratingCount: 685,
+        reactions: { amazing: 610, good: 60, okay: 10, weird: 3, cursed: 2 },
+        votesNormal: 675,
+        votesCursed: 10,
+        isKeralaSpecial: true,
+        featured: true,
+        trending: true,
+        createdBy: "Vivek George",
+        createdAt: "2026-02-20T12:00:00Z"
+      },
+      {
+        id: "pazham-pori-beef",
+        title: "Pazham Pori + Beef Curry 🍌🥩",
+        mainFoodId: "pazham_pori",
+        mainFoodName: "Pazham Pori",
+        comboFoodName: "Fiery Beef Curry",
+        category: "Kerala Specials",
+        imageUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1000&q=80",
+        description: "The Kottayam phenomenon that united sweet and savory extremists. Crunchy sweet caramelized banana fritter dunked into fiery, peppery beef gravy.",
+        whyLike: "People thought we lost our minds until they took their first bite. The sweet-savoury contrast hits like lightning.",
+        weirdnessScore: 3,
+        ratingAvg: 4.65,
+        ratingCount: 610,
+        reactions: { amazing: 470, good: 95, okay: 25, weird: 15, cursed: 5 },
+        votesNormal: 480,
+        votesCursed: 130,
+        isKeralaSpecial: true,
+        featured: true,
+        trending: true,
+        createdBy: "Tony K. Chacko",
+        createdAt: "2026-02-22T16:30:00Z"
+      },
+      {
+        id: "porotta-beef-fry",
+        title: "Malabar Porotta + Beef Fry 👑",
+        mainFoodId: "porotta",
+        mainFoodName: "Malabar Porotta",
+        comboFoodName: "Beef Dry Fry (BDF)",
+        category: "Meat",
+        imageUrl: "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=1000&q=80",
+        description: "The undisputed cultural ambassador of Kerala street gastronomy. Crushed flaky hot porotta torn and wrapped around peppery fried beef with fried curry leaves.",
+        whyLike: "Not just food; it's an emotion, a religion, and the answer to every life dilemma.",
+        weirdnessScore: 1,
+        ratingAvg: 4.96,
+        ratingCount: 940,
+        reactions: { amazing: 890, good: 42, okay: 5, weird: 2, cursed: 1 },
+        votesNormal: 935,
+        votesCursed: 5,
+        isKeralaSpecial: true,
+        featured: true,
+        trending: true,
+        createdBy: "Fahad Faasil Fan",
+        createdAt: "2026-02-24T19:00:00Z"
+      },
+      {
+        id: "kappa-meen-curry",
+        title: "Kappa + Meen Curry 🐟",
+        mainFoodId: "kappa",
+        mainFoodName: "Kappa (Tapioca)",
+        comboFoodName: "Kudampuli Red Fish Curry",
+        category: "Seafood",
+        imageUrl: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1000&q=80",
+        description: "Steamed, seasoned tapioca mashed with green chillies and coconut, flooded with sour, fiery crimson fish curry infused with smoky Malabar tamarind.",
+        whyLike: "The toddy shop experience on a plate. The tang of the fish curry cutting through the rich starchy kappa is unmatched.",
+        weirdnessScore: 1,
+        ratingAvg: 4.88,
+        ratingCount: 540,
+        reactions: { amazing: 480, good: 48, okay: 8, weird: 3, cursed: 1 },
+        votesNormal: 532,
+        votesCursed: 8,
+        isKeralaSpecial: true,
+        featured: true,
+        trending: false,
+        createdBy: "Mathew Alex",
+        createdAt: "2026-02-25T13:40:00Z"
+      },
+      {
+        id: "kanji-payar-chammanthi",
+        title: "Kanji + Payar + Chammanthi 🥣",
+        mainFoodId: "kanji",
+        mainFoodName: "Puzhukkallari Kanji",
+        comboFoodName: "Payar + Chammanthi + Pappadam",
+        category: "Rice & Grains",
+        imageUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=1000&q=80",
+        description: "Boiling red rice porridge slurped from a bowl, chased with seasoned green gram, fiery roasted coconut chutney, and shattered crispy pappadom.",
+        whyLike: "When you are sick, rainy, tired, or homesick, this heals parts of your soul medicine cannot touch.",
+        weirdnessScore: 1,
+        ratingAvg: 4.86,
+        ratingCount: 420,
+        reactions: { amazing: 370, good: 42, okay: 6, weird: 1, cursed: 1 },
+        votesNormal: 415,
+        votesCursed: 5,
+        isKeralaSpecial: true,
+        featured: false,
+        trending: false,
+        createdBy: "Devika N.",
+        createdAt: "2026-02-26T20:10:00Z"
+      },
+      // --- CURSED COMBOS 💀 ---
+      {
+        id: "puttu-ice-cream",
+        title: "Puttu + Vanilla Ice Cream 🍦",
+        mainFoodId: "puttu",
+        mainFoodName: "Puttu",
+        comboFoodName: "Vanilla Ice Cream",
+        category: "Desserts",
+        imageUrl: "https://images.unsplash.com/photo-1501443762994-82bd5dace89a?auto=format&fit=crop&w=1000&q=80",
+        description: "Boiling hot steamed puttu topped directly with a melting scoop of cold vanilla ice cream. Coconut crumble meets creamy sweet vanilla.",
+        whyLike: "Hot coconut rice cake + cold sweet vanilla = warm rice pudding! Don't judge before trying.",
+        weirdnessScore: 4,
+        ratingAvg: 3.15,
+        ratingCount: 440,
+        reactions: { amazing: 65, good: 85, okay: 110, weird: 130, cursed: 50 },
+        votesNormal: 140,
+        votesCursed: 300,
+        isKeralaSpecial: true,
+        featured: true,
+        trending: true,
+        createdBy: "Arjun FoodLab",
+        createdAt: "2026-03-04T21:10:00Z"
+      },
+      {
+        id: "porotta-nutella",
+        title: "Porotta + Chocolate / Nutella 🍫",
+        mainFoodId: "porotta",
+        mainFoodName: "Malabar Porotta",
+        comboFoodName: "Nutella Chocolate Spread",
+        category: "Desserts",
+        imageUrl: "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=1000&q=80",
+        description: "Spreading rich hazelnut chocolate over hot flaky salted porotta and rolling it up like a French crepe.",
+        whyLike: "Basically a ghetto croissant. The salty flaky dough against thick warm chocolate is dangerously addictive.",
+        weirdnessScore: 3,
+        ratingAvg: 3.65,
+        ratingCount: 380,
+        reactions: { amazing: 140, good: 110, okay: 60, weird: 45, cursed: 25 },
+        votesNormal: 260,
+        votesCursed: 120,
+        isKeralaSpecial: false,
+        featured: false,
+        trending: true,
+        createdBy: "Sneha Roy",
+        createdAt: "2026-03-05T18:20:00Z"
+      },
+      {
+        id: "biriyani-ketchup",
+        title: "Dum Biriyani + Tomato Ketchup 💀",
+        mainFoodId: "biriyani",
+        mainFoodName: "Thalassery Biriyani",
+        comboFoodName: "Tomato Ketchup",
+        category: "Cursed Combos",
+        imageUrl: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=1000&q=80",
+        description: "Squeezing sweet processed red tomato ketchup all over fragrant, slow-cooked Kaima dum biriyani instead of raita.",
+        whyLike: "My hostel warden only served dry biriyani and the ketchup bottle was right there. I have sinned, but I cannot stop.",
+        weirdnessScore: 5,
+        ratingAvg: 1.68,
+        ratingCount: 890,
+        reactions: { amazing: 20, good: 30, okay: 60, weird: 210, cursed: 570 },
+        votesNormal: 65,
+        votesCursed: 825,
+        isKeralaSpecial: false,
+        featured: true,
+        trending: true,
+        createdBy: "Anonymous Sinner",
+        createdAt: "2026-03-06T11:00:00Z"
+      },
+      {
+        id: "pizza-gulab-jamun",
+        title: "Cheese Pizza + Gulab Jamun 💀",
+        mainFoodId: "pizza",
+        mainFoodName: "Cheese Pizza",
+        comboFoodName: "Warm Gulab Jamun",
+        category: "Cursed Combos",
+        imageUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=1000&q=80",
+        description: "Placing warm, rosewater sugar-syrup dripping gulab jamuns on a slice of hot oregano-crusted pepperoni cheese pizza.",
+        whyLike: "We wanted dessert and dinner at the exact same second. An abomination that haunts our family tree.",
+        weirdnessScore: 5,
+        ratingAvg: 1.42,
+        ratingCount: 760,
+        reactions: { amazing: 15, good: 22, okay: 43, weird: 180, cursed: 500 },
+        votesNormal: 40,
+        votesCursed: 720,
+        isKeralaSpecial: false,
+        featured: true,
+        trending: true,
+        createdBy: "Mad Scientist Chef",
+        createdAt: "2026-03-08T22:15:00Z"
+      },
+      {
+        id: "maggi-curd",
+        title: "Maggi Noodles + Curd (Dahi) 🥣",
+        mainFoodId: "maggi",
+        mainFoodName: "Maggi Noodles",
+        comboFoodName: "Cold Sour Curd",
+        category: "Cursed Combos",
+        imageUrl: "https://images.unsplash.com/photo-1612927601601-6638404737ce?auto=format&fit=crop&w=1000&q=80",
+        description: "Dumping two massive spoonfuls of refrigerator-cold curd into steaming hot spicy masala Maggi and stirring it into a creamy sludge.",
+        whyLike: "Tames the spice, cools it down immediately, and tastes surprisingly like spicy stroganoff.",
+        weirdnessScore: 4,
+        ratingAvg: 2.34,
+        ratingCount: 450,
+        reactions: { amazing: 40, good: 65, okay: 85, weird: 140, cursed: 120 },
+        votesNormal: 110,
+        votesCursed: 340,
+        isKeralaSpecial: false,
+        featured: false,
+        trending: false,
+        createdBy: "Hostel Survivor",
+        createdAt: "2026-03-07T02:30:00Z"
+      }
+    ];
+
+    const INITIAL_COMMENTS = {
+      "puttu-kadala": [
+        { id: "c1", userName: "Suresh Pillai", userAvatar: "👨‍🍳", content: "Cultural heritage. The gravy must be dark and infused with roasted coconut paste.", createdAt: "2 days ago", likes: 48 },
+        { id: "c2", userName: "Parvathy M.", userAvatar: "👩‍🌾", content: "Add a pinch of sugar on the side for the ultimate contrast. 10/10.", createdAt: "1 day ago", likes: 24 }
+      ],
+      "pazham-pori-beef": [
+        { id: "c3", userName: "Rinshad Kottayam", userAvatar: "🚀", content: "People from other states mocked us for 5 years, now they visit Kottayam just for this. Absolute masterpiece.", createdAt: "3 days ago", likes: 62 },
+        { id: "c4", userName: "Aarti S.", userAvatar: "👩‍💼", content: "Was terrified at first bite. Now I order extra beef gravy whenever I buy pazham pori.", createdAt: "18 hours ago", likes: 19 }
+      ],
+      "puttu-ice-cream": [
+        { id: "c5", userName: "CursedFoodie99", userAvatar: "💀", content: "Try it with butterscotch ice cream next time. The praline crunch with the coconut puttu goes unreasonably hard.", createdAt: "12 hours ago", likes: 31 },
+        { id: "c6", userName: "Amma", userAvatar: "👵", content: "I raised you for 25 years so you could put ice cream on puttu? God help this generation.", createdAt: "6 hours ago", likes: 95 }
+      ],
+      "biriyani-ketchup": [
+        { id: "c7", userName: "Kerala Police Cybercell", userAvatar: "👮", content: "Please stay right where you are. A team has been dispatched to your location.", createdAt: "1 day ago", likes: 154 }
+      ]
+    };
+
+    const INITIAL_USERS = [
+      { id: "user-1", name: "Rahul Kumar", handle: "@rahulkerala", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80", role: "Kerala Food Purist", combosAdded: 4, combosRated: 18, favorites: ["puttu-kadala", "porotta-beef-fry", "pazham-pori-beef"], badges: ["combo_hunter", "food_explorer"] },
+      { id: "user-2", name: "Maya Shenoy", handle: "@mayabites", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80", role: "Culinary Adventurer", combosAdded: 6, combosRated: 26, favorites: ["pazham-pori-beef", "puttu-ice-cream"], badges: ["combo_hunter", "food_explorer", "cursed_scientist"] },
+      { id: "user-3", name: "Appu The Sinner", handle: "@appu_chaos", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80", role: "Cursed Food Scientist 💀", combosAdded: 7, combosRated: 35, favorites: ["biriyani-ketchup", "pizza-gulab-jamun", "maggi-curd"], badges: ["combo_hunter", "cursed_scientist", "no_fear"] }
+    ];
+
+    const BADGE_DEFINITIONS = {
+      combo_hunter: { id: "combo_hunter", name: "Combo Hunter", emoji: "🏆", description: "Rated 10 or more food combinations" },
+      food_explorer: { id: "food_explorer", name: "Food Explorer", emoji: "🔥", description: "Explored and interacted with 20+ food combinations" },
+      cursed_scientist: { id: "cursed_scientist", name: "Cursed Food Scientist", emoji: "💀", description: "Submitted or favored 3+ cursed food combinations" },
+      no_fear: { id: "no_fear", name: "No Fear", emoji: "🤯", description: "Rated 3 or more combinations with weirdness above 4" }
+    };
+
+    const CATEGORIES = [
+      { id: "all", name: "All Combos", icon: "✨" },
+      { id: "kerala", name: "Kerala Specials", icon: "🌴" },
+      { id: "breakfast", name: "Breakfast", icon: "🥞" },
+      { id: "meat", name: "Meat & Poultry", icon: "🥩" },
+      { id: "seafood", name: "Seafood", icon: "🐟" },
+      { id: "rice", name: "Rice & Grains", icon: "🍚" },
+      { id: "snacks", name: "Snacks & Tea", icon: "🍟" },
+      { id: "desserts", name: "Desserts & Sweet", icon: "🍰" },
+      { id: "cursed", name: "Cursed Vault 💀", icon: "💀" }
+    ];
+
+    // --- CONTEXT ---
+    const AppContext = createContext();
+
+    function AppProvider({ children }) {
+      const [combinations, setCombinations] = useState(() => {
+        try {
+          const s = localStorage.getItem('combobite_combos_s');
+          return s ? JSON.parse(s) : INITIAL_COMBINATIONS;
+        } catch(e) { return INITIAL_COMBINATIONS; }
+      });
+      const [comments, setComments] = useState(() => {
+        try {
+          const s = localStorage.getItem('combobite_comments_s');
+          return s ? JSON.parse(s) : INITIAL_COMMENTS;
+        } catch(e) { return INITIAL_COMMENTS; }
+      });
+      const [users, setUsers] = useState(() => {
+        try {
+          const s = localStorage.getItem('combobite_users_s');
+          return s ? JSON.parse(s) : INITIAL_USERS;
+        } catch(e) { return INITIAL_USERS; }
+      });
+      const [currentUserId, setCurrentUserId] = useState('user-1');
+      const [userRatings, setUserRatings] = useState(() => {
+        try {
+          const s = localStorage.getItem('combobite_ratings_s');
+          return s ? JSON.parse(s) : {};
+        } catch(e) { return {}; }
+      });
+      const [duelVotes, setDuelVotes] = useState({});
+      const [currentTab, setCurrentTab] = useState('explore');
+      const [selectedComboId, setSelectedComboId] = useState(null);
+      const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+      const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+      const [searchQuery, setSearchQuery] = useState('');
+      const [selectedCategory, setSelectedCategory] = useState('all');
+      const [toasts, setToasts] = useState([]);
+
+      useEffect(() => {
+        try { localStorage.setItem('combobite_combos_s', JSON.stringify(combinations)); } catch(e){}
+      }, [combinations]);
+
+      useEffect(() => {
+        try { localStorage.setItem('combobite_comments_s', JSON.stringify(comments)); } catch(e){}
+      }, [comments]);
+
+      useEffect(() => {
+        try { localStorage.setItem('combobite_users_s', JSON.stringify(users)); } catch(e){}
+      }, [users]);
+
+      useEffect(() => {
+        try { localStorage.setItem('combobite_ratings_s', JSON.stringify(userRatings)); } catch(e){}
+      }, [userRatings]);
+
+      const currentUser = users.find(u => u.id === currentUserId) || users[0];
+
+      const addToast = (title, message, type = 'info', emoji = '✨') => {
+        const id = Date.now() + Math.random();
+        setToasts(prev => [...prev.slice(-3), { id, title, message, type, emoji }]);
+        setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4500);
+      };
+
+      const removeToast = (id) => setToasts(prev => prev.filter(t => t.id !== id));
+
+      const toggleFavorite = (comboId) => {
+        const isFav = currentUser.favorites.includes(comboId);
+        const updated = isFav ? currentUser.favorites.filter(id => id !== comboId) : [...currentUser.favorites, comboId];
+        setUsers(prev => prev.map(u => u.id === currentUser.id ? { ...u, favorites: updated } : u));
+        if (!isFav) addToast('Saved to Favorites ❤️', 'Added to your bookmarked collection!', 'success', '❤️');
+      };
+
+      const submitRating = (comboId, stars, reaction = 'amazing') => {
+        const combo = combinations.find(c => c.id === comboId);
+        if (!combo) return;
+        const userKey = currentUser.id;
+        const existing = userRatings[userKey]?.[comboId];
+
+        let newCount = combo.ratingCount;
+        let newTotal = combo.ratingAvg * combo.ratingCount;
+        if (existing) {
+          newTotal = newTotal - existing.stars + stars;
+        } else {
+          newCount += 1;
+          newTotal += stars;
+        }
+        const newAvg = Number((newTotal / newCount).toFixed(2));
+
+        const updatedReactions = { ...combo.reactions };
+        if (existing && existing.reaction) {
+          updatedReactions[existing.reaction] = Math.max(0, (updatedReactions[existing.reaction] || 1) - 1);
+        }
+        updatedReactions[reaction] = (updatedReactions[reaction] || 0) + 1;
+
+        setCombinations(prev => prev.map(c => c.id === comboId ? { ...c, ratingAvg: newAvg, ratingCount: newCount, reactions: updatedReactions } : c));
+        const updatedRatings = { ...userRatings, [userKey]: { ...(userRatings[userKey] || {}), [comboId]: { stars, reaction } } };
+        setUserRatings(updatedRatings);
+
+        const updatedUser = { ...currentUser, combosRated: Object.keys(updatedRatings[userKey] || {}).length };
+        setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
+
+        if (window.confetti && stars === 5) {
+          try { window.confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } }); } catch(e){}
+        }
+
+        // Contextual toast responses
+        if (combo.weirdnessScore >= 4 && stars >= 4) {
+          addToast('Interesting choice... 👀', `You gave ${stars}★ to "${combo.title}". Are you okay?`, 'cursed', '💀');
+        } else if (combo.isKeralaSpecial && stars <= 2) {
+          addToast('Blasphemy detected! 🚨', `You just judged someone's childhood comfort food (${combo.title}) 💀`, 'cursed', '😭');
+        } else if (stars === 5) {
+          addToast('A person of refined culture! 🤌', `You rated "${combo.title}" 5/5. Immaculate taste.`, 'success', '🤌');
+        } else {
+          addToast('Rating saved!', `Your ${stars}★ vote on "${combo.title}" has been recorded.`, 'info', '⭐');
+        }
+      };
+
+      const voteDuel = (comboId, choice) => {
+        const combo = combinations.find(c => c.id === comboId);
+        if (!combo) return;
+        const prevVote = duelVotes[currentUser.id]?.[comboId];
+        if (prevVote === choice) return;
+
+        let normDelta = 0; let cursDelta = 0;
+        if (choice === 'normal') {
+          normDelta = 1; if (prevVote === 'cursed') cursDelta = -1;
+        } else {
+          cursDelta = 1; if (prevVote === 'normal') normDelta = -1;
+        }
+
+        setCombinations(prev => prev.map(c => c.id === comboId ? {
+          ...c,
+          votesNormal: Math.max(0, (c.votesNormal || 0) + normDelta),
+          votesCursed: Math.max(0, (c.votesCursed || 0) + cursDelta)
+        } : c));
+
+        setDuelVotes(prev => ({
+          ...prev,
+          [currentUser.id]: { ...(prev[currentUser.id] || {}), [comboId]: choice }
+        }));
+
+        if (choice === 'cursed') {
+          addToast('Voted CURSED 💀', 'Added to the hall of infamy!', 'cursed', '💀');
+        } else {
+          addToast('Voted NORMAL 🤌', 'Sanity prevails!', 'success', '🤌');
+        }
+      };
+
+      const addComment = (comboId, content) => {
+        if (!content.trim()) return;
+        const newC = {
+          id: 'c_' + Date.now(),
+          userName: currentUser.name,
+          userAvatar: currentUser.name.charAt(0),
+          content: content.trim(),
+          createdAt: 'Just now',
+          likes: 0
+        };
+        setComments(prev => ({ ...prev, [comboId]: [newC, ...(prev[comboId] || [])] }));
+        addToast('Comment Posted 💬', 'Your hot take has been published!', 'info', '💬');
+      };
+
+      const likeComment = (comboId, commentId) => {
+        setComments(prev => ({
+          ...prev,
+          [comboId]: (prev[comboId] || []).map(c => c.id === commentId ? { ...c, likes: c.likes + 1 } : c)
+        }));
+      };
+
+      const addCombination = (data) => {
+        const id = (data.mainFoodName + '-' + data.comboFoodName).toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Date.now().toString().slice(-4);
+        const newCombo = {
+          id,
+          title: data.title || `${data.mainFoodName} + ${data.comboFoodName}`,
+          mainFoodId: 'custom',
+          mainFoodName: data.mainFoodName,
+          comboFoodName: data.comboFoodName,
+          category: data.category || 'Kerala Specials',
+          imageUrl: data.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1000&q=80',
+          description: data.description || `Pairing of ${data.mainFoodName} and ${data.comboFoodName}.`,
+          whyLike: data.whyLike || 'Adventurous tastebuds know no boundaries!',
+          weirdnessScore: Number(data.weirdnessScore) || 2,
+          ratingAvg: 5.0,
+          ratingCount: 1,
+          reactions: { amazing: 1, good: 0, okay: 0, weird: 0, cursed: 0 },
+          votesNormal: data.weirdnessScore <= 2 ? 1 : 0,
+          votesCursed: data.weirdnessScore > 2 ? 1 : 0,
+          isKeralaSpecial: Boolean(data.isKeralaSpecial),
+          trending: true,
+          createdBy: currentUser.name,
+          createdAt: new Date().toISOString()
+        };
+
+        setCombinations(prev => [newCombo, ...prev]);
+        setUsers(prev => prev.map(u => u.id === currentUser.id ? { ...u, combosAdded: (u.combosAdded || 0) + 1 } : u));
+        addToast('Combo Published! 🎉', `"${newCombo.title}" is now live!`, 'success', '🚀');
+        return newCombo;
+      };
+
+      const resetToDefaults = () => {
+        localStorage.clear();
+        setCombinations(INITIAL_COMBINATIONS);
+        setComments(INITIAL_COMMENTS);
+        setUsers(INITIAL_USERS);
+        setUserRatings({});
+        setDuelVotes({});
+        addToast('Database Reset', 'Returned to original seed combinations.', 'info', '🔄');
+      };
+
+      const selectedCombo = combinations.find(c => c.id === selectedComboId) || null;
+
+      return (
+        <AppContext.Provider value={{
+          combinations,
+          comments,
+          users,
+          currentUser,
+          setCurrentUserId,
+          currentTab,
+          setCurrentTab,
+          selectedComboId,
+          setSelectedComboId,
+          selectedCombo,
+          isAddModalOpen,
+          setIsAddModalOpen,
+          isProfileModalOpen,
+          setIsProfileModalOpen,
+          searchQuery,
+          setSearchQuery,
+          selectedCategory,
+          setSelectedCategory,
+          userRatings,
+          duelVotes,
+          toasts,
+          addToast,
+          removeToast,
+          toggleFavorite,
+          submitRating,
+          voteDuel,
+          addComment,
+          likeComment,
+          addCombination,
+          resetToDefaults,
+          BADGE_DEFINITIONS
+        }}>
+          {children}
+        </AppContext.Provider>
+      );
+    }
+
+    const useApp = () => useContext(AppContext);
+
+    // --- TOAST CONTAINER ---
+    function ToastContainer() {
+      const { toasts, removeToast } = useApp();
+      if (!toasts.length) return null;
+      return (
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none">
+          {toasts.map((toast) => {
+            const isCursed = toast.type === 'cursed';
+            const isSuccess = toast.type === 'success';
+            let borderBg = 'bg-slate-900/95 text-white border-slate-700 shadow-xl';
+            if (isCursed) borderBg = 'bg-rose-950/95 text-rose-100 border-rose-600 shadow-rose-900/40 shadow-2xl';
+            if (isSuccess) borderBg = 'bg-emerald-950/95 text-emerald-100 border-emerald-600 shadow-emerald-900/40 shadow-xl';
+
+            return (
+              <div key={toast.id} className={`pointer-events-auto flex items-start gap-3 p-4 rounded-2xl border backdrop-blur-md transition-all ${borderBg}`}>
+                <div className="text-2xl select-none shrink-0 pt-0.5">{toast.emoji}</div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-bold text-sm tracking-wide">{toast.title}</h4>
+                  <p className="text-xs opacity-90 mt-1 leading-relaxed">{toast.message}</p>
+                </div>
+                <button onClick={() => removeToast(toast.id)} className="text-white/60 hover:text-white p-1">
+                  <Icons.X size={15} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // --- NAVBAR ---
+    function Navbar() {
+      const { currentTab, setCurrentTab, setIsAddModalOpen, setIsProfileModalOpen, currentUser } = useApp();
+      const [mobileOpen, setMobileOpen] = useState(false);
+
+      const navItems = [
+        { id: 'explore', label: 'Explore', icon: Icons.Compass },
+        { id: 'search', label: 'Search Foods', icon: Icons.Search },
+        { id: 'duel', label: 'Normal vs Cursed ⚔️', icon: Icons.Swords, highlight: true },
+        { id: 'feed', label: 'Live Feed', icon: Icons.Flame }
+      ];
+
+      return (
+        <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 text-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16 sm:h-20">
+              {/* Logo */}
+              <button onClick={() => setCurrentTab('explore')} className="flex items-center gap-3 text-left group">
+                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-rose-600 flex items-center justify-center text-xl sm:text-2xl shadow-lg shadow-orange-500/25 transform group-hover:scale-105 transition-transform">
+                  🍌
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-black text-xl sm:text-2xl tracking-tight bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 bg-clip-text text-transparent">
+                      ComboBite
+                    </span>
+                    <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                      Kerala & Beyond
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 font-medium hidden sm:block">
+                    What goes with what? Normal or Cursed? 💀
+                  </p>
+                </div>
+              </button>
+
+              {/* Nav */}
+              <nav className="hidden md:flex items-center gap-1 bg-slate-800/60 p-1.5 rounded-full border border-slate-700/60">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = currentTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setCurrentTab(item.id)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                        isActive ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 font-black shadow-md' : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                      }`}
+                    >
+                      <Icon size={16} />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+
+              {/* CTAs */}
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                <button
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="flex items-center gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold text-xs sm:text-sm shadow-lg shadow-orange-500/20 active:scale-95 transition-all"
+                >
+                  <Icons.PlusCircle size={16} />
+                  <span>Add Combo <span className="hidden sm:inline">+</span></span>
+                </button>
+
+                <button
+                  onClick={() => setIsProfileModalOpen(true)}
+                  className="flex items-center gap-2 p-1.5 sm:px-3 sm:py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors"
+                >
+                  <img src={currentUser.avatar} alt={currentUser.name} className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover ring-2 ring-orange-500/60" />
+                  <span className="hidden lg:inline text-xs font-bold text-slate-200">{currentUser.name}</span>
+                </button>
+
+                <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2 text-slate-300">
+                  <Icons.Menu size={20} />
+                </button>
+              </div>
+            </div>
+          </div>
+          {mobileOpen && (
+            <div className="md:hidden border-t border-slate-800 bg-slate-900 px-4 py-3 space-y-1">
+              {navItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => { setCurrentTab(item.id); setMobileOpen(false); }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold ${currentTab === item.id ? 'bg-orange-500/20 text-orange-400' : 'text-slate-300'}`}
+                >
+                  <item.icon size={18} />
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </header>
+      );
+    }
+
+    // --- NORMAL OR CURSED DUEL ---
+    function NormalOrCursedDuel({ isStandalone = false }) {
+      const { combinations, currentUser, duelVotes, voteDuel, setSelectedComboId, addToast } = useApp();
+      const candidateIds = ['puttu-ice-cream', 'pazham-pori-beef', 'biriyani-ketchup', 'puttu-banana', 'porotta-nutella', 'pizza-gulab-jamun', 'maggi-curd', 'kappa-meen-curry'];
+      const [currentIndex, setCurrentIndex] = useState(0);
+
+      const duelList = candidateIds.map(id => combinations.find(c => c.id === id)).filter(Boolean);
+      const combo = duelList[currentIndex % duelList.length] || combinations[0];
+      if (!combo) return null;
+
+      const currentVote = duelVotes[currentUser.id]?.[combo.id];
+      const totalVotes = (combo.votesNormal || 0) + (combo.votesCursed || 0);
+      const normalPercent = totalVotes > 0 ? Math.round(((combo.votesNormal || 0) / totalVotes) * 100) : 50;
+      const cursedPercent = 100 - normalPercent;
+
+      const handleShare = () => {
+        const text = `Normal or Cursed? 💀 "${combo.title}" on ComboBite! What do you think?`;
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(text);
+          addToast('Copied to Clipboard!', 'Share this food debate with friends 🍿', 'info', '📋');
+        }
+      };
+
+      return (
+        <div className={`relative w-full ${isStandalone ? 'max-w-3xl mx-auto my-8' : 'my-8'}`}>
+          <div className="relative overflow-hidden rounded-3xl bg-slate-900 border-2 border-slate-700/80 shadow-2xl p-6 sm:p-8">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-rose-500 to-amber-500 text-white shadow-md">
+                  <Icons.Swords size={22} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-black text-lg sm:text-xl text-white">Normal or Cursed? ⚔️</h3>
+                    <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">Arena</span>
+                  </div>
+                  <p className="text-xs text-slate-400">You decide: Is this soul food or a culinary crime?</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setCurrentIndex(prev => prev + 1)}
+                className="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold flex items-center gap-1.5"
+              >
+                <Icons.RefreshCw size={14} />
+                <span className="hidden sm:inline">Next Pairing</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+              <div className="md:col-span-5 relative rounded-2xl overflow-hidden aspect-[4/3] bg-slate-800 border border-slate-700">
+                <img src={combo.imageUrl} alt={combo.title} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-white">
+                  <span>{combo.ratingAvg} ★ ({combo.ratingCount} reviews)</span>
+                  <button onClick={() => setSelectedComboId(combo.id)} className="underline text-amber-400 font-bold">Details →</button>
+                </div>
+              </div>
+
+              <div className="md:col-span-7 flex flex-col justify-center space-y-4">
+                <div>
+                  <h2 className="text-2xl sm:text-3xl font-black text-white">{combo.title}</h2>
+                  <p className="mt-2 text-xs sm:text-sm text-slate-300 italic bg-slate-800/40 p-3 rounded-xl border border-slate-800">"{combo.description}"</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button
+                    onClick={() => voteDuel(combo.id, 'normal')}
+                    className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all ${
+                      currentVote === 'normal'
+                        ? 'bg-emerald-950/80 border-emerald-500 text-emerald-200 ring-2 ring-emerald-500/50'
+                        : 'bg-slate-800/80 hover:bg-emerald-950/30 border-slate-700 text-slate-200 hover:text-emerald-300'
+                    }`}
+                  >
+                    <div className="text-3xl mb-1">🤌</div>
+                    <div className="font-black text-sm tracking-wide uppercase">NORMAL</div>
+                    <div className="text-[11px] opacity-75">Soul Food / Valid</div>
+                  </button>
+
+                  <button
+                    onClick={() => voteDuel(combo.id, 'cursed')}
+                    className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all ${
+                      currentVote === 'cursed'
+                        ? 'bg-rose-950/80 border-rose-500 text-rose-200 ring-2 ring-rose-500/50'
+                        : 'bg-slate-800/80 hover:bg-rose-950/30 border-slate-700 text-slate-200 hover:text-rose-300'
+                    }`}
+                  >
+                    <div className="text-3xl mb-1">💀</div>
+                    <div className="font-black text-sm tracking-wide uppercase">CURSED</div>
+                    <div className="text-[11px] opacity-75">Abomination / Jail</div>
+                  </button>
+                </div>
+
+                {/* Percentage split */}
+                <div className="pt-2 space-y-2 bg-slate-950/60 p-4 rounded-2xl border border-slate-800">
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span className="text-emerald-400">🤌 {normalPercent}% Normal</span>
+                    <span className="text-slate-400">{totalVotes.toLocaleString()} votes</span>
+                    <span className="text-rose-400">{cursedPercent}% Cursed 💀</span>
+                  </div>
+                  <div className="w-full h-3 bg-slate-800 rounded-full overflow-hidden flex">
+                    <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${normalPercent}%` }} />
+                    <div className="h-full bg-rose-500 transition-all duration-500" style={{ width: `${cursedPercent}%` }} />
+                  </div>
+                  <div className="flex justify-between items-center text-[11px] text-slate-400 pt-1">
+                    <button onClick={handleShare} className="hover:text-amber-400 flex items-center gap-1 font-semibold">
+                      <Icons.Share2 size={12} />
+                      <span>Share debate</span>
+                    </button>
+                    <button onClick={() => setCurrentIndex(prev => prev + 1)} className="hover:text-white text-orange-400 font-bold">
+                      Next Pairing →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- COMBO CARD ---
+    function ComboCard({ combo }) {
+      const { currentUser, toggleFavorite, setSelectedComboId, comments } = useApp();
+      const isFav = currentUser.favorites?.includes(combo.id);
+      const comboComments = comments[combo.id] || [];
+
+      return (
+        <div
+          onClick={() => setSelectedComboId(combo.id)}
+          className="group relative flex flex-col rounded-3xl bg-slate-900 border border-slate-800 hover:border-orange-500/50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 cursor-pointer overflow-hidden text-left"
+        >
+          <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-800">
+            <img src={combo.imageUrl} alt={combo.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+
+            <button
+              onClick={(e) => { e.stopPropagation(); toggleFavorite(combo.id); }}
+              className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-md transition-all ${
+                isFav ? 'bg-rose-500 text-white shadow-lg' : 'bg-black/50 text-white/80 hover:text-white'
+              }`}
+            >
+              <Icons.Heart size={16} fill={isFav ? 'currentColor' : 'none'} />
+            </button>
+
+            <div className="absolute top-3 left-3 flex gap-1.5">
+              {combo.isKeralaSpecial && (
+                <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-emerald-950/90 text-emerald-300 border border-emerald-500/40 backdrop-blur-md">
+                  🌴 Kerala
+                </span>
+              )}
+            </div>
+
+            <div className="absolute bottom-3 left-3 right-3 flex items-center gap-1.5">
+              <span className="px-2 py-0.5 rounded-lg bg-black/70 backdrop-blur-md text-xs font-bold text-amber-300 border border-amber-500/30">{combo.mainFoodName}</span>
+              <span className="text-xs font-black text-slate-300">+</span>
+              <span className="px-2 py-0.5 rounded-lg bg-black/70 backdrop-blur-md text-xs font-bold text-white border border-white/20">{combo.comboFoodName}</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col flex-1 p-5 space-y-3">
+            <div>
+              <h3 className="text-lg font-black text-white group-hover:text-amber-400 transition-colors line-clamp-1">{combo.title}</h3>
+              <p className="mt-1 text-xs text-slate-400 line-clamp-2 leading-relaxed">"{combo.description}"</p>
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-[10px] font-bold">
+                <span className="text-slate-400 uppercase">Cursed Meter</span>
+                <span className={combo.weirdnessScore >= 4 ? 'text-rose-400' : combo.weirdnessScore === 3 ? 'text-amber-400' : 'text-emerald-400'}>
+                  {combo.weirdnessScore === 1 ? '1/5 Normal 🤌' : combo.weirdnessScore === 2 ? '2/5 Mild 👍' : combo.weirdnessScore === 3 ? '3/5 Weird 🤨' : combo.weirdnessScore === 4 ? '4/5 Cursed 💀' : '5/5 Pure Chaos 🚨'}
+                </span>
+              </div>
+              <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden flex gap-0.5">
+                {[1, 2, 3, 4, 5].map((lvl) => (
+                  <div key={lvl} className={`h-full flex-1 ${lvl <= combo.weirdnessScore ? (combo.weirdnessScore >= 4 ? 'bg-rose-500' : combo.weirdnessScore === 3 ? 'bg-amber-400' : 'bg-emerald-400') : 'bg-slate-800'}`} />
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between mt-auto">
+              <div className="flex items-center gap-1.5 text-amber-400">
+                <Icons.Star size={15} fill="currentColor" />
+                <span className="font-extrabold text-sm text-white">{combo.ratingAvg}</span>
+                <span className="text-xs text-slate-500">({combo.ratingCount})</span>
+              </div>
+              <div className="flex items-center gap-1 text-xs text-slate-400">
+                <Icons.MessageCircle size={14} />
+                <span>{comboComments.length}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- COMBO DETAIL MODAL ---
+    function ComboDetailModal() {
+      const { selectedCombo, setSelectedComboId, currentUser, userRatings, submitRating, toggleFavorite, comments, addComment, likeComment, addToast } = useApp();
+      const [commentText, setCommentText] = useState('');
+      const [selectedReaction, setSelectedReaction] = useState('amazing');
+
+      if (!selectedCombo) return null;
+      const isFav = currentUser.favorites?.includes(selectedCombo.id);
+      const comboComments = comments[selectedCombo.id] || [];
+      const userVote = userRatings[currentUser.id]?.[selectedCombo.id];
+
+      const reactions = [
+        { key: 'amazing', emoji: '🤌', label: 'Would eat again' },
+        { key: 'good', emoji: '👍', label: 'Pretty good' },
+        { key: 'okay', emoji: '😐', label: "It's okay" },
+        { key: 'weird', emoji: '🤨', label: 'Weird' },
+        { key: 'cursed', emoji: '💀', label: 'Never again' }
+      ];
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto animate-fadeIn">
+          <div className="relative w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col text-left">
+            <button onClick={() => setSelectedComboId(null)} className="absolute top-4 right-4 z-20 p-2.5 rounded-full bg-black/60 hover:bg-black/80 text-white">
+              <Icons.X size={18} />
+            </button>
+
+            <div className="overflow-y-auto flex-1 divide-y divide-slate-800">
+              <div className="relative aspect-[16/9] w-full bg-slate-950">
+                <img src={selectedCombo.imageUrl} alt={selectedCombo.title} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
+                <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between">
+                  <div>
+                    <h1 className="text-2xl sm:text-4xl font-black text-white">{selectedCombo.title}</h1>
+                    <p className="text-xs text-amber-300 mt-1 font-semibold">{selectedCombo.mainFoodName} + {selectedCombo.comboFoodName}</p>
+                  </div>
+                  <button
+                    onClick={() => toggleFavorite(selectedCombo.id)}
+                    className={`px-4 py-2 rounded-full font-bold text-xs flex items-center gap-1.5 ${isFav ? 'bg-rose-500 text-white' : 'bg-black/60 text-white'}`}
+                  >
+                    <Icons.Heart size={15} fill={isFav ? 'currentColor' : 'none'} />
+                    <span>{isFav ? 'Favorited' : 'Favorite'}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-6">
+                <div>
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Story & Pairing</h3>
+                  <p className="text-sm text-slate-200 leading-relaxed">{selectedCombo.description}</p>
+                  {selectedCombo.whyLike && (
+                    <div className="mt-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs italic">
+                      "{selectedCombo.whyLike}"
+                    </div>
+                  )}
+                </div>
+
+                {/* Rating Interactive */}
+                <div className="p-5 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-bold text-white text-sm">Rate This Combination</h4>
+                      <p className="text-xs text-slate-400">Give your score and reaction</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-2xl font-black text-amber-400">{selectedCombo.ratingAvg} ★</span>
+                      <span className="block text-[11px] text-slate-400">{selectedCombo.ratingCount} ratings</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <span className="text-xs font-bold text-slate-300">Stars:</span>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          onClick={() => submitRating(selectedCombo.id, star, selectedReaction)}
+                          className="p-1 text-amber-400 hover:scale-125 transition-transform"
+                        >
+                          <Icons.Star size={22} fill={(userVote?.stars || 0) >= star ? 'currentColor' : 'none'} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <span className="text-xs font-bold text-slate-300 block mb-2">Select Your Reaction:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {reactions.map((r) => (
+                        <button
+                          key={r.key}
+                          onClick={() => {
+                            setSelectedReaction(r.key);
+                            submitRating(selectedCombo.id, userVote?.stars || 5, r.key);
+                          }}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                            (userVote?.reaction === r.key || selectedReaction === r.key)
+                              ? 'bg-orange-500 text-slate-950 font-black ring-2 ring-orange-400'
+                              : 'bg-slate-900 text-slate-300 hover:text-white border border-slate-700'
+                          }`}
+                        >
+                          <span>{r.emoji}</span>
+                          <span>{r.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Comments */}
+                <div className="space-y-4">
+                  <h4 className="font-bold text-white text-base flex items-center gap-2">
+                    <Icons.MessageCircle size={18} className="text-amber-400" />
+                    <span>What People Are Saying ({comboComments.length})</span>
+                  </h4>
+
+                  <form onSubmit={(e) => { e.preventDefault(); addComment(selectedCombo.id, commentText); setCommentText(''); }} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      placeholder="Share your hot take on this combo..."
+                      className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-orange-500"
+                    />
+                    <button type="submit" disabled={!commentText.trim()} className="px-4 py-2.5 rounded-xl bg-orange-500 text-slate-950 font-bold text-xs">
+                      Post
+                    </button>
+                  </form>
+
+                  <div className="space-y-2.5 max-h-52 overflow-y-auto pr-1">
+                    {comboComments.map((c) => (
+                      <div key={c.id} className="p-3 rounded-xl bg-slate-800/60 border border-slate-800 flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-2.5">
+                          <span className="text-xl">{c.userAvatar || '👤'}</span>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-xs text-white">{c.userName}</span>
+                              <span className="text-[10px] text-slate-500">{c.createdAt}</span>
+                            </div>
+                            <p className="text-xs text-slate-300 mt-0.5">{c.content}</p>
+                          </div>
+                        </div>
+                        <button onClick={() => likeComment(selectedCombo.id, c.id)} className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-orange-400">
+                          <Icons.ThumbsUp size={12} />
+                          <span>{c.likes}</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- ADD COMBO MODAL ---
+    function AddComboModal() {
+      const { isAddModalOpen, setIsAddModalOpen, addCombination, setSelectedComboId } = useApp();
+      const [mainFoodName, setMainFoodName] = useState('');
+      const [comboFoodName, setComboFoodName] = useState('');
+      const [title, setTitle] = useState('');
+      const [description, setDescription] = useState('');
+      const [whyLike, setWhyLike] = useState('');
+      const [weirdnessScore, setWeirdnessScore] = useState(1);
+      const [isKeralaSpecial, setIsKeralaSpecial] = useState(true);
+
+      if (!isAddModalOpen) return null;
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!mainFoodName.trim() || !comboFoodName.trim()) return;
+        const newCombo = addCombination({
+          mainFoodName: mainFoodName.trim(),
+          comboFoodName: comboFoodName.trim(),
+          title: title.trim() || `${mainFoodName} + ${comboFoodName}`,
+          description: description.trim() || `Exciting combination of ${mainFoodName} and ${comboFoodName}.`,
+          whyLike: whyLike.trim(),
+          weirdnessScore: Number(weirdnessScore),
+          isKeralaSpecial
+        });
+        setIsAddModalOpen(false);
+        setSelectedComboId(newCombo.id);
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto animate-fadeIn">
+          <div className="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col text-left">
+            <div className="flex items-center justify-between p-6 border-b border-slate-800">
+              <h2 className="text-xl font-black text-white">✨ Submit a New Combo</h2>
+              <button onClick={() => setIsAddModalOpen(false)} className="p-2 text-slate-400 hover:text-white">
+                <Icons.X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="overflow-y-auto p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">1. Main Food *</label>
+                  <input
+                    type="text"
+                    required
+                    value={mainFoodName}
+                    onChange={(e) => setMainFoodName(e.target.value)}
+                    placeholder="e.g. Puttu, Porotta, Appam"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">2. Pair With *</label>
+                  <input
+                    type="text"
+                    required
+                    value={comboFoodName}
+                    onChange={(e) => setComboFoodName(e.target.value)}
+                    placeholder="e.g. Kadala, Ice Cream, Beef"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1">Combination Title (Optional)</label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder={mainFoodName && comboFoodName ? `${mainFoodName} + ${comboFoodName}` : "Title..."}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white"
+                />
+              </div>
+
+              {/* Weirdness Slider */}
+              <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-slate-300">How Weird Is It?</span>
+                  <span className={weirdnessScore >= 4 ? 'text-rose-400' : 'text-emerald-400'}>
+                    {weirdnessScore === 1 ? '1: Normal 🤌' : weirdnessScore === 2 ? '2: Mild 👍' : weirdnessScore === 3 ? '3: Weird 🤨' : weirdnessScore === 4 ? '4: Sus 💀' : '5: Cursed 🚨'}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="5"
+                  value={weirdnessScore}
+                  onChange={(e) => setWeirdnessScore(Number(e.target.value))}
+                  className="w-full h-2 bg-slate-700 rounded-lg cursor-pointer accent-orange-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1">Description</label>
+                <textarea
+                  rows="2"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="What makes this combination special?"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1">Why do you swear by it?</label>
+                <textarea
+                  rows="2"
+                  value={whyLike}
+                  onChange={(e) => setWhyLike(e.target.value)}
+                  placeholder="Personal story or why someone should try it..."
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="kerala-cb"
+                  checked={isKeralaSpecial}
+                  onChange={(e) => setIsKeralaSpecial(e.target.checked)}
+                  className="rounded text-orange-500"
+                />
+                <label htmlFor="kerala-cb" className="text-xs font-bold text-slate-300">Authentic Kerala Special 🌴</label>
+              </div>
+
+              <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">
+                <button type="button" onClick={() => setIsAddModalOpen(false)} className="px-4 py-2 text-xs font-bold text-slate-400">Cancel</button>
+                <button type="submit" className="px-5 py-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold text-xs">
+                  Publish Combo 🚀
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    // --- PROFILE MODAL ---
+    function ProfileModal() {
+      const { isProfileModalOpen, setIsProfileModalOpen, currentUser, users, setCurrentUserId, BADGE_DEFINITIONS, resetToDefaults } = useApp();
+      if (!isProfileModalOpen) return null;
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto animate-fadeIn">
+          <div className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col text-left">
+            <div className="flex items-center justify-between p-5 border-b border-slate-800">
+              <h2 className="text-lg font-black text-white flex items-center gap-2">
+                <Icons.Award className="text-amber-400" />
+                <span>Foodie Profile & Badges</span>
+              </h2>
+              <button onClick={() => setIsProfileModalOpen(false)} className="p-2 text-slate-400 hover:text-white">
+                <Icons.X size={18} />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto p-6 space-y-6">
+              <div className="flex items-center gap-4">
+                <img src={currentUser.avatar} alt={currentUser.name} className="w-16 h-16 rounded-2xl object-cover ring-2 ring-orange-500" />
+                <div>
+                  <h3 className="text-lg font-black text-white">{currentUser.name}</h3>
+                  <span className="text-xs text-orange-400 font-bold">{currentUser.role}</span>
+                  <div className="text-[11px] text-slate-400 font-mono mt-0.5">{currentUser.handle}</div>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Switch Persona:</span>
+                <div className="grid grid-cols-3 gap-2">
+                  {users.map((u) => (
+                    <button
+                      key={u.id}
+                      onClick={() => setCurrentUserId(u.id)}
+                      className={`p-2 rounded-xl border text-center transition-all ${u.id === currentUser.id ? 'bg-orange-500/20 border-orange-500 text-white font-bold' : 'bg-slate-800 text-slate-300 border-slate-700'}`}
+                    >
+                      <div className="text-xs truncate">{u.name}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Achievements:</h4>
+                <div className="grid grid-cols-2 gap-2.5">
+                  {Object.values(BADGE_DEFINITIONS).map((badge) => {
+                    const isUnlocked = currentUser.badges?.includes(badge.id);
+                    return (
+                      <div key={badge.id} className={`p-3 rounded-xl border flex items-start gap-2.5 ${isUnlocked ? 'bg-amber-500/10 border-amber-500/30 text-white' : 'bg-slate-800/40 border-slate-800 text-slate-500 opacity-60'}`}>
+                        <div className="text-2xl">{badge.emoji}</div>
+                        <div>
+                          <div className="text-xs font-bold">{badge.name}</div>
+                          <div className="text-[10px] text-slate-400">{badge.description}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-800 flex justify-between items-center text-xs text-slate-500">
+                <button onClick={resetToDefaults} className="flex items-center gap-1 hover:text-orange-400">
+                  <Icons.RotateCcw size={12} />
+                  <span>Reset Seed Data</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- EXPLORE VIEW ---
+    function ExploreView() {
+      const { combinations, selectedCategory, setSelectedCategory, setCurrentTab, searchQuery, setSearchQuery } = useApp();
+
+      let displayCombos = [...combinations];
+      if (selectedCategory !== 'all') {
+        if (selectedCategory === 'kerala') displayCombos = displayCombos.filter(c => c.isKeralaSpecial);
+        else if (selectedCategory === 'cursed') displayCombos = displayCombos.filter(c => c.weirdnessScore >= 4);
+        else displayCombos = displayCombos.filter(c => c.category?.toLowerCase() === selectedCategory.toLowerCase());
+      }
+
+      const trending = combinations.filter(c => c.trending).slice(0, 6);
+      const keralaClassics = combinations.filter(c => c.isKeralaSpecial && c.weirdnessScore <= 2).slice(0, 6);
+      const cursed = combinations.filter(c => c.weirdnessScore >= 4);
+
+      return (
+        <div className="space-y-12 pb-16">
+          {/* Hero */}
+          <section className="relative pt-8 pb-12 sm:pt-12 sm:pb-16 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border-b border-slate-800 text-center px-4">
+            <div className="max-w-4xl mx-auto space-y-5">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-800 text-xs font-bold text-amber-300 border border-slate-700">
+                <span>🌴 Kerala's Food Pairing & Debate Arena</span>
+                <span className="text-slate-500">|</span>
+                <span className="text-rose-400">Normal or Cursed? 💀</span>
+              </div>
+              <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight">
+                What goes with what? <span className="text-orange-500">👀</span>
+              </h1>
+              <p className="text-sm sm:text-lg text-slate-300 max-w-2xl mx-auto">
+                Discover food combinations people love, tolerate, or absolutely regret — from nostalgic <span className="text-amber-300 font-bold">Puttu + Kadala</span> to controversial <span className="text-rose-400 font-bold">Puttu + Ice Cream</span>.
+              </p>
+
+              <form onSubmit={(e) => { e.preventDefault(); if (searchQuery) setCurrentTab('search'); }} className="max-w-xl mx-auto flex gap-2 p-2 bg-slate-800/90 border border-slate-700 rounded-full">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search food e.g. Puttu, Porotta, Beef, Ice Cream..."
+                  className="w-full bg-transparent px-4 text-white text-sm focus:outline-none placeholder-slate-400"
+                />
+                <button type="submit" className="px-5 py-2 rounded-full bg-orange-500 text-slate-950 font-bold text-xs shrink-0">
+                  Search
+                </button>
+              </form>
+
+              {/* Category pills */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 justify-start sm:justify-center scrollbar-none pt-2">
+                {CATEGORIES.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(cat.id)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${selectedCategory === cat.id ? 'bg-orange-500 text-slate-950' : 'bg-slate-800 text-slate-300 hover:text-white'}`}
+                  >
+                    <span>{cat.icon}</span> <span>{cat.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* Body */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 text-left">
+            {selectedCategory === 'all' ? (
+              <>
+                <NormalOrCursedDuel />
+
+                {/* Trending */}
+                <section className="space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <h2 className="text-xl font-black text-white flex items-center gap-2">
+                      <Icons.Flame className="text-orange-500" />
+                      <span>Trending Combos 🔥</span>
+                    </h2>
+                    <button onClick={() => setCurrentTab('search')} className="text-xs text-orange-400 font-bold">See all →</button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {trending.map(c => <ComboCard key={c.id} combo={c} />)}
+                  </div>
+                </section>
+
+                {/* Kerala Specials */}
+                <section className="p-6 sm:p-8 rounded-3xl bg-emerald-950/20 border border-emerald-900/40 space-y-4">
+                  <div className="flex items-center justify-between border-b border-emerald-900/40 pb-3">
+                    <h2 className="text-xl font-black text-white flex items-center gap-2">
+                      <span>🌴</span>
+                      <span>Kerala Comfort Specials</span>
+                    </h2>
+                    <span className="text-xs text-emerald-300 font-bold">God's Own Gastronomy</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {keralaClassics.map(c => <ComboCard key={c.id} combo={c} />)}
+                  </div>
+                </section>
+
+                {/* Cursed Vault */}
+                <section className="p-6 sm:p-8 rounded-3xl bg-rose-950/20 border border-rose-900/40 space-y-4">
+                  <div className="flex items-center justify-between border-b border-rose-900/40 pb-3">
+                    <h2 className="text-xl font-black text-white flex items-center gap-2">
+                      <span>💀</span>
+                      <span>The Cursed Hall of Infamy</span>
+                    </h2>
+                    <button onClick={() => setCurrentTab('duel')} className="text-xs text-rose-400 font-bold">Vote in Arena →</button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {cursed.map(c => <ComboCard key={c.id} combo={c} />)}
+                  </div>
+                </section>
+              </>
+            ) : (
+              <section className="space-y-4">
+                <h2 className="text-2xl font-black text-white capitalize">Category: {selectedCategory}</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {displayCombos.map(c => <ComboCard key={c.id} combo={c} />)}
+                </div>
+              </section>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // --- SEARCH DISCOVER VIEW ---
+    function SearchDiscoverView() {
+      const { combinations, searchQuery, setSearchQuery } = useApp();
+      const [activeFood, setActiveFood] = useState(null);
+      const [sortBy, setSortBy] = useState('highest_rated');
+
+      const chips = ['Puttu', 'Porotta', 'Pazham Pori', 'Kappa', 'Biriyani', 'Appam', 'Kanji', 'Maggi', 'Ice Cream'];
+
+      const results = useMemo(() => {
+        let list = [...combinations];
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase().trim();
+          list = list.filter(c => c.title.toLowerCase().includes(q) || c.mainFoodName.toLowerCase().includes(q) || c.comboFoodName.toLowerCase().includes(q));
+        }
+        if (activeFood) {
+          const f = activeFood.toLowerCase();
+          list = list.filter(c => c.mainFoodName.toLowerCase().includes(f) || c.comboFoodName.toLowerCase().includes(f));
+        }
+        if (sortBy === 'highest_rated') list.sort((a,b) => b.ratingAvg - a.ratingAvg);
+        if (sortBy === 'weirdest') list.sort((a,b) => b.weirdnessScore - a.weirdnessScore);
+        if (sortBy === 'popular') list.sort((a,b) => b.ratingCount - a.ratingCount);
+        return list;
+      }, [combinations, searchQuery, activeFood, sortBy]);
+
+      return (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 text-left">
+          <div className="space-y-3">
+            <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2">
+              <Icons.Search className="text-orange-500" />
+              <span>Search & Discover Combos</span>
+            </h1>
+
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search any food e.g. Puttu, Beef, Ice Cream..."
+                className="w-full bg-slate-900 border border-slate-700 rounded-2xl px-12 py-3.5 text-white text-sm sm:text-base focus:outline-none focus:border-orange-500"
+              />
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                <Icons.Search size={18} />
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+              <span className="text-xs text-slate-400 font-bold shrink-0">Quick Filter:</span>
+              {chips.map(chip => (
+                <button
+                  key={chip}
+                  onClick={() => setActiveFood(activeFood === chip ? null : chip)}
+                  className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${activeFood === chip ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-slate-300'}`}
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center text-xs text-slate-400">
+            <span>Showing {results.length} combinations</span>
+            <div className="flex items-center gap-2">
+              <Icons.ArrowUpDown size={13} />
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="bg-slate-800 border border-slate-700 text-white rounded-lg p-1">
+                <option value="highest_rated">⭐ Highest Rated</option>
+                <option value="popular">🔥 Most Popular</option>
+                <option value="weirdest">💀 Weirdest & Cursed</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {results.map(c => <ComboCard key={c.id} combo={c} />)}
+          </div>
+        </div>
+      );
+    }
+
+    // --- COMMUNITY FEED VIEW ---
+    function CommunityFeedView() {
+      const { combinations, currentUser, toggleFavorite, setSelectedComboId, comments, setIsAddModalOpen } = useApp();
+
+      return (
+        <div className="max-w-3xl mx-auto px-4 py-8 space-y-6 text-left">
+          <div className="flex justify-between items-center border-b border-slate-800 pb-4">
+            <div>
+              <h1 className="text-2xl font-black text-white flex items-center gap-2">
+                <Icons.Flame className="text-orange-500" />
+                <span>Community Live Feed</span>
+              </h1>
+              <p className="text-xs text-slate-400">Latest combinations and reviews</p>
+            </div>
+            <button onClick={() => setIsAddModalOpen(true)} className="px-4 py-2 rounded-full bg-orange-500 text-slate-950 font-bold text-xs">
+              + Post Combo
+            </button>
+          </div>
+
+          <div className="space-y-6">
+            {combinations.map((combo) => {
+              const isFav = currentUser.favorites?.includes(combo.id);
+              const comboComments = comments[combo.id] || [];
+              return (
+                <article key={combo.id} className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden">
+                  <div className="p-4 flex items-center justify-between border-b border-slate-800">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center font-bold text-slate-950 text-xs">
+                        {combo.createdBy ? combo.createdBy.charAt(0) : '👤'}
+                      </div>
+                      <div>
+                        <span className="font-bold text-xs text-white">{combo.createdBy}</span>
+                        <span className="text-[10px] text-slate-500 block">added a combo 👀</span>
+                      </div>
+                    </div>
+                    {combo.weirdnessScore >= 4 && (
+                      <span className="text-[10px] bg-rose-500/20 text-rose-300 font-bold px-2 py-0.5 rounded-full">Cursed 💀</span>
+                    )}
+                  </div>
+
+                  <div onClick={() => setSelectedComboId(combo.id)} className="aspect-[16/9] bg-slate-950 cursor-pointer relative group">
+                    <img src={combo.imageUrl} alt={combo.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <div className="absolute bottom-3 left-3 right-3 text-white">
+                      <h3 className="text-xl font-black drop-shadow-md">{combo.title}</h3>
+                    </div>
+                  </div>
+
+                  <div className="p-4 flex items-center justify-between">
+                    <div className="flex gap-4 text-xs font-bold">
+                      <button onClick={() => toggleFavorite(combo.id)} className={`flex items-center gap-1 ${isFav ? 'text-rose-400' : 'text-slate-300'}`}>
+                        <Icons.Heart size={15} fill={isFav ? 'currentColor' : 'none'} />
+                        <span>{isFav ? 'Liked' : 'Like'}</span>
+                      </button>
+                      <button onClick={() => setSelectedComboId(combo.id)} className="flex items-center gap-1 text-slate-300">
+                        <Icons.Star size={15} className="text-amber-400" />
+                        <span>{combo.ratingAvg}★</span>
+                      </button>
+                      <button onClick={() => setSelectedComboId(combo.id)} className="flex items-center gap-1 text-slate-300">
+                        <Icons.MessageCircle size={15} />
+                        <span>{comboComments.length}</span>
+                      </button>
+                    </div>
+                    <button onClick={() => setSelectedComboId(combo.id)} className="text-xs font-bold text-orange-400">
+                      Details →
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    // --- MAIN APP ---
+    function App() {
+      const { currentTab, setCurrentTab, selectedComboId, isAddModalOpen, isProfileModalOpen } = useApp();
+
+      return (
+        <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+          <Navbar />
+          <main className="flex-1">
+            {currentTab === 'explore' && <ExploreView />}
+            {currentTab === 'search' && <SearchDiscoverView />}
+            {currentTab === 'duel' && (
+              <div className="max-w-3xl mx-auto px-4 py-8">
+                <NormalOrCursedDuel isStandalone={true} />
+              </div>
+            )}
+            {currentTab === 'feed' && <CommunityFeedView />}
+          </main>
+
+          {selectedComboId && <ComboDetailModal />}
+          {isAddModalOpen && <AddComboModal />}
+          {isProfileModalOpen && <ProfileModal />}
+          <ToastContainer />
+
+          <footer className="border-t border-slate-800 py-8 text-center text-xs text-slate-500 mt-12 space-y-2">
+            <div className="font-bold text-slate-400">ComboBite 🍌 | Normal or Cursed?</div>
+            <p>Celebrating Kerala comfort foods and chaotic late-night culinary experiments.</p>
+          </footer>
+        </div>
+      );
+    }
+
+    // Mount
+    ReactDOM.createRoot(document.getElementById('root')).render(
+      <AppProvider>
+        <App />
+      </AppProvider>
+    );
+  </script>
+</body>
+</html>

@@ -97,29 +97,6 @@ export const INITIAL_COMBINATIONS = [
     tags: ["Emotion", "Street Food", "GOAT"]
   },
   {
-    id: "pazham-pori-beef",
-    title: "Pazham Pori + Beef Curry 🍌🥩",
-    mainFoodId: "pazham_pori",
-    mainFoodName: "Pazham Pori",
-    comboFoodName: "Fiery Beef Curry",
-    category: "Kerala Specials",
-    imageUrl: "https://images.weserv.nl/?url=commons.wikimedia.org/wiki/Special:FilePath/Pazham_pori_with_beef_roast.jpg&w=1000&q=80",
-    description: "The Kottayam phenomenon that united sweet and savory extremists. Crunchy sweet caramelized banana fritter dunked into fiery, peppery beef gravy.",
-    whyLike: "People thought we lost our minds until they took their first bite. The sweet-savoury contrast hits like lightning.",
-    weirdnessScore: 3,
-    ratingAvg: 4.65,
-    ratingCount: 610,
-    reactions: { amazing: 470, good: 95, okay: 25, weird: 15, cursed: 5 },
-    votesNormal: 480,
-    votesCursed: 130,
-    isKeralaSpecial: true,
-    featured: true,
-    trending: true,
-    createdBy: "Tony K. Chacko",
-    createdAt: "2026-02-22T16:30:00Z",
-    tags: ["Cult Classic", "Sweet & Savory", "Kottayam Pride"]
-  },
-  {
     id: "kappa-meen-curry",
     title: "Kappa + Meen Curry 🐟",
     mainFoodId: "kappa",
@@ -209,16 +186,6 @@ export const INITIAL_COMMENTS = {
       likes: 24
     }
   ],
-  "pazham-pori-beef": [
-    {
-      id: "c3",
-      userName: "Rinshad Kottayam",
-      userAvatar: "🚀",
-      content: "People from other states mocked us for 5 years, now they visit Kottayam just for this. Absolute masterpiece.",
-      createdAt: "3 days ago",
-      likes: 62
-    }
-  ],
   "biriyani-ketchup": [
     {
       id: "c7",
@@ -248,7 +215,7 @@ export const INITIAL_USERS = [
     role: "Kerala Food Purist",
     combosAdded: 4,
     combosRated: 18,
-    favorites: ["puttu-kadala", "porotta-beef-fry", "pazham-pori-beef"],
+    favorites: ["puttu-kadala", "porotta-beef-fry"],
     badges: ["combo_hunter", "food_explorer"]
   },
   {
@@ -259,7 +226,7 @@ export const INITIAL_USERS = [
     role: "Culinary Adventurer",
     combosAdded: 6,
     combosRated: 26,
-    favorites: ["pazham-pori-beef", "kappa-meen-curry"],
+    favorites: ["kappa-meen-curry"],
     badges: ["combo_hunter", "food_explorer", "cursed_scientist"]
   },
   {

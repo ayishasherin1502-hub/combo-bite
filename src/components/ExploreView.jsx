@@ -119,7 +119,7 @@ export default function ExploreView() {
                       Kerala Comfort Specials
                     </h2>
                     <p className="text-xs text-slate-400">
-                      Puttu + Kadala, Porotta + Beef, Pazham Pori + Beef, Kappa + Meen & more
+                      Puttu + Kadala, Porotta + Beef, Kappa + Meen & more
                     </p>
                   </div>
                 </div>

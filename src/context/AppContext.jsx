@@ -20,7 +20,7 @@ import {
 const AppContext = createContext();
 
 const STORAGE_KEYS = {
-  COMBOS: 'combobite_combinations_v2',
+  COMBOS: 'combobite_combinations_v3',
   FOODS: 'combobite_foods_v2',
   COMMENTS: 'combobite_comments_v1',
   USERS: 'combobite_users_v1',

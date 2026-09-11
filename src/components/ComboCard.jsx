@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   Star,
@@ -8,7 +8,11 @@ import {
   Flame,
   Skull,
   TrendingUp,
-  Share2
+  Share2,
+  Trash2,
+  Pencil,
+  Check,
+  X
 } from 'lucide-react';
 
 export default function ComboCard({ combo }) {
@@ -16,8 +20,12 @@ export default function ComboCard({ combo }) {
     currentUser,
     toggleFavorite,
     setSelectedComboId,
+    deleteCombination,
+    openEditModal,
     comments
   } = useApp();
+
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const isFavorite = currentUser.favorites?.includes(combo.id);
   const comboComments = comments[combo.id] || [];
@@ -42,6 +50,16 @@ export default function ComboCard({ combo }) {
     reactionBadgeClass = 'bg-amber-400/20 text-amber-300 border-amber-400/40';
   }
 
+  const handleDeleteClick = (e) => {
+    e.stopPropagation();
+    if (confirmDelete) {
+      deleteCombination(combo.id);
+    } else {
+      setConfirmDelete(true);
+      setTimeout(() => setConfirmDelete(false), 3500);
+    }
+  };
+
   return (
     <div
       onClick={() => setSelectedComboId(combo.id)}
@@ -57,22 +75,55 @@ export default function ComboCard({ combo }) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
 
-        {/* Favorite Heart Button */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleFavorite(combo.id);
-          }}
-          className={`absolute top-3 right-3 p-2.5 rounded-full backdrop-blur-md transition-all ${
-            isFavorite
-              ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/40 scale-110'
-              : 'bg-black/50 text-white/80 hover:text-white hover:bg-black/70'
-          }`}
-          aria-label="Save to favorites"
-        >
-          <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} />
-        </button>
+        {/* Top Right Action Buttons (Edit + Delete + Favorite) */}
+        <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
+          {/* Edit Button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              openEditModal(combo.id);
+            }}
+            className="p-2 rounded-full backdrop-blur-md bg-black/50 text-white/70 hover:text-amber-400 hover:bg-black/80 opacity-80 hover:opacity-100 transition-all"
+            title="Edit combo details"
+            aria-label="Edit combo"
+          >
+            <Pencil size={15} />
+          </button>
+
+          {/* Delete Button */}
+          <button
+            type="button"
+            onClick={handleDeleteClick}
+            className={`p-2 rounded-full backdrop-blur-md transition-all ${
+              confirmDelete
+                ? 'bg-rose-600 text-white scale-105 px-3 flex items-center gap-1 text-[11px] font-bold shadow-lg shadow-rose-600/40'
+                : 'bg-black/50 text-white/70 hover:text-rose-400 hover:bg-black/80 opacity-80 hover:opacity-100'
+            }`}
+            title={confirmDelete ? 'Click again to confirm delete' : 'Remove combo'}
+            aria-label="Remove combo"
+          >
+            <Trash2 size={15} />
+            {confirmDelete && <span>Delete?</span>}
+          </button>
+
+          {/* Favorite Heart Button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFavorite(combo.id);
+            }}
+            className={`p-2.5 rounded-full backdrop-blur-md transition-all ${
+              isFavorite
+                ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/40 scale-110'
+                : 'bg-black/50 text-white/80 hover:text-white hover:bg-black/70'
+            }`}
+            aria-label="Save to favorites"
+          >
+            <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} />
+          </button>
+        </div>
 
         {/* Badges on Image */}
         <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">

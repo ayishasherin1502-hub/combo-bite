@@ -9,6 +9,7 @@ import AuthView from './components/AuthView';
 import OnboardingView from './components/OnboardingView';
 import ComboDetailModal from './components/ComboDetailModal';
 import AddComboModal from './components/AddComboModal';
+import EditComboModal from './components/EditComboModal';
 import ProfileModal from './components/ProfileModal';
 import ToastContainer from './components/ToastContainer';
 import { Heart, Sparkles, Skull, RotateCcw } from 'lucide-react';
@@ -20,6 +21,7 @@ export default function App() {
     authMode,
     selectedComboId,
     isAddModalOpen,
+    isEditModalOpen,
     isProfileModalOpen,
     resetToDefaults
   } = useApp();
@@ -54,6 +56,7 @@ export default function App() {
       {/* Global Modals */}
       {selectedComboId && <ComboDetailModal />}
       {isAddModalOpen && <AddComboModal />}
+      {isEditModalOpen && <EditComboModal />}
       {isProfileModalOpen && <ProfileModal />}
       <ToastContainer />
 

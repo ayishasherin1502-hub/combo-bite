@@ -20,8 +20,8 @@ import {
 const AppContext = createContext();
 
 const STORAGE_KEYS = {
-  COMBOS: 'combobite_combinations_v1',
-  FOODS: 'combobite_foods_v1',
+  COMBOS: 'combobite_combinations_v2',
+  FOODS: 'combobite_foods_v2',
   COMMENTS: 'combobite_comments_v1',
   USERS: 'combobite_users_v1',
   CURRENT_USER_ID: 'combobite_current_user_v1',
@@ -113,8 +113,10 @@ export function AppProvider({ children }) {
   const [currentTab, setCurrentTab] = useState('explore'); // 'explore', 'search', 'duel', 'feed', 'auth', 'onboarding'
   const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup'
   const [selectedComboId, setSelectedComboId] = useState(null);
+  const [editingComboId, setEditingComboId] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const isEditModalOpen = Boolean(editingComboId);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [toasts, setToasts] = useState([]);
@@ -733,6 +735,57 @@ export function AppProvider({ children }) {
     return newCombo;
   };
 
+  // Delete a combination
+  const deleteCombination = (comboId) => {
+    const comboToDelete = combinations.find(c => c.id === comboId);
+    const title = comboToDelete ? comboToDelete.title : 'Food Combination';
+
+    setCombinations(prev => prev.filter(c => c.id !== comboId));
+
+    // Remove from user favorites
+    setUsers(prev => prev.map(u => ({
+      ...u,
+      favorites: (u.favorites || []).filter(id => id !== comboId)
+    })));
+
+    // Clean up comments
+    setComments(prev => {
+      const next = { ...prev };
+      delete next[comboId];
+      return next;
+    });
+
+    if (selectedComboId === comboId) {
+      setSelectedComboId(null);
+    }
+
+    addToast('Combo Removed 🗑️', `"${title}" has been removed.`, 'info', '🗑️');
+  };
+
+  // Update an existing combination
+  const updateCombination = (comboId, updatedFields) => {
+    setCombinations(prev => prev.map(c => {
+      if (c.id === comboId) {
+        return {
+          ...c,
+          ...updatedFields,
+          updatedAt: new Date().toISOString()
+        };
+      }
+      return c;
+    }));
+
+    addToast('Combo Updated! ✏️', `"${updatedFields.title || 'Combination'}" changes saved.`, 'success', '✏️');
+  };
+
+  const openEditModal = (comboId) => {
+    setEditingComboId(comboId);
+  };
+
+  const closeEditModal = () => {
+    setEditingComboId(null);
+  };
+
   // Reset to default seed data
   const resetToDefaults = () => {
     localStorage.removeItem(STORAGE_KEYS.COMBOS);
@@ -771,6 +824,10 @@ export function AppProvider({ children }) {
       selectedComboId,
       setSelectedComboId,
       selectedCombo,
+      editingComboId,
+      isEditModalOpen,
+      openEditModal,
+      closeEditModal,
       isAddModalOpen,
       setIsAddModalOpen,
       isProfileModalOpen,
@@ -790,6 +847,8 @@ export function AppProvider({ children }) {
       addComment,
       likeComment,
       addCombination,
+      updateCombination,
+      deleteCombination,
       resetToDefaults,
       BADGE_DEFINITIONS,
       // Authentication state & helpers

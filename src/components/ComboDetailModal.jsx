@@ -13,7 +13,9 @@ import {
   Info,
   CheckCircle2,
   AlertCircle,
-  Skull
+  Skull,
+  Trash2,
+  Pencil
 } from 'lucide-react';
 
 export default function ComboDetailModal() {
@@ -24,6 +26,8 @@ export default function ComboDetailModal() {
     userRatings,
     submitRating,
     toggleFavorite,
+    deleteCombination,
+    openEditModal,
     comments,
     addComment,
     likeComment,
@@ -34,6 +38,7 @@ export default function ComboDetailModal() {
   const [selectedStars, setSelectedStars] = useState(0);
   const [selectedReaction, setSelectedReaction] = useState('amazing');
   const [commentText, setCommentText] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   if (!selectedCombo) return null;
 
@@ -136,6 +141,35 @@ export default function ComboDetailModal() {
                 >
                   <Share2 size={16} />
                   <span>Share</span>
+                </button>
+
+                <button
+                  onClick={() => openEditModal(selectedCombo.id)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-black/60 hover:bg-black/80 text-white hover:text-amber-400 border border-white/20 font-bold text-xs backdrop-blur-md transition-all"
+                  title="Edit combo details"
+                >
+                  <Pencil size={15} />
+                  <span>Edit</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    if (confirmDelete) {
+                      deleteCombination(selectedCombo.id);
+                    } else {
+                      setConfirmDelete(true);
+                      setTimeout(() => setConfirmDelete(false), 3500);
+                    }
+                  }}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full font-bold text-xs backdrop-blur-md transition-all ${
+                    confirmDelete
+                      ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/40'
+                      : 'bg-black/60 hover:bg-rose-950/60 text-slate-300 hover:text-rose-400 border border-white/20'
+                  }`}
+                  title={confirmDelete ? 'Click again to confirm delete' : 'Delete combo'}
+                >
+                  <Trash2 size={15} />
+                  <span>{confirmDelete ? 'Confirm Delete?' : 'Delete'}</span>
                 </button>
               </div>
             </div>
